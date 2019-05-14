@@ -15,8 +15,9 @@ class data (object):
 
     def calcFanout(self,tbl : table):
         # harus diisi rumusnya
-
-        return 1
+        from math import floor
+        return floor(self.db.getBlockSize()/(tbl.key_size + self.db.getTidSize()))
+    
     def calcBfr(self,tbl : table):
         # harus diisi rumusnya
         from math import floor
@@ -25,6 +26,9 @@ class data (object):
     def calcJmlBlok(self, tbl : table):
         from math import ceil
         return (ceil(tbl.record_num/self.calcBfr(tbl)))
+
+    def calcIndexBlock(self, tbl : table):
+        from
 
     def isTableExist(self,table_name : str):
         import formatting.script as script

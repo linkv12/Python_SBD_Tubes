@@ -18,7 +18,7 @@ class table (object) :
 
         self.record_size = int(temp_data[2].split(' ')[-1])
         self.record_num = int(temp_data[3].split(' ')[-1])
-        self.tid_size = int(temp_data[-1].split(' ')[-1])
+        self.key_size = int(temp_data[-1].split(' ')[-1])
 
 
     def print_table(self):

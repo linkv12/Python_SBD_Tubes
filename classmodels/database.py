@@ -19,15 +19,15 @@ class database (object) :
             important_data[i] = script.cleanString(important_data[i])
 
 
-        self._pointersize = int(important_data[0].split(' ')[1])
+        self._tid_size = int(important_data[0].split(' ')[1])
         self._blocksize = int(important_data[1].split(' ')[1])
 
         #print(important_data)
         #print("p_size : %d" % self._pointersize)
         #print("b_size : %d" % self._blocksize)
 
-    def getPointerSize(self):
-        return self._pointersize
+    def getTidSize(self):
+        return self._tid_size
 
     def getBlockSize(self):
         return self._blocksize
