@@ -19,8 +19,10 @@ class data (object):
         return 1
     def calcBfr(self,tbl : table):
         # harus diisi rumusnya
+        from math import floor
+        return (floor(self.db.getBlockSize()/tbl.record_size))
 
-        return 111
+    def calcJmlBlok(self, tbl : table):
 
     def isTableExist(self,table_name : str):
         import formatting.script as script
@@ -34,7 +36,6 @@ class data (object):
 
     def validateRecordPosition(self,table_name : str ,record_num : int):
         temp_table = self.getTable(self.tb, table_name)
-        print("LOL " + temp_table.record_num)
         if (temp_table != None) :
             if (record_num <= 0):
                 return False
@@ -72,6 +73,7 @@ class data (object):
 
     def calcQEPnCost(self, query: str):
         import formatting.script as script
+        raw_query = query
         query = script.cleanString(query)
 
         def isValidEnough(q_ery : str) :
@@ -111,6 +113,10 @@ class data (object):
                             print("\tList Kolom : %s" % str([join_info[-1]]))
                             # (str(self.getTable(self.tb,join_info[1][-1]).table_column))
 
+                    print("\tTabel(%d) : %s" % (i, join_info[1][i - 1]))
+                    if (i == 1):
+                        print("\tList Kolom : %s" % str(self.getTable(self.tb, join_info[1][0]).table_column))
+
                     qep_cost = []
                     for i in range(0, 2):
                         print(">> QEP #%d" % (i + 1))
@@ -129,8 +135,27 @@ class data (object):
                         qep_cost.append(99) # qep_cost.append(ini harus diisi formula hitung qep)
                         print("\tCost (worst case) : %d block" % qep_cost[i])  # 99 itu placeholder
 
+                    qep_cost[1] = 10
                     print(">> QEP optimal : QEP#%d" % (qep_cost.index(min(qep_cost)) + 1))
 
+                    ## ini cuma string formating
+                    proj = "PROJECTION "
+                    for col in join_info[0]:
+                        if (join_info[0][-1] == col):
+                            proj = proj + col + ' -- on the fly'
+                        else:
+                            proj = proj +" " + col + ', '
+                    jn = "\t\tJOIN %s.%s = %s.%s -- BNLJ" % (
+                        join_info[1][0], join_info[-1], join_info[1][1], join_info[-1])
+                    if (qep_cost.index(min(qep_cost)) == 0) :
+                        tbl_urutan = ("%s\t\t%s" % (join_info[1][0], join_info[1][1]))
+                    else :
+                        tbl_urutan = ("%s\t\t%s" % (join_info[1][1], join_info[1][0]))
+
+                    cost_qep_formated = "Cost (worst case) : %d block" % min(qep_cost)
+                    data_to_write =[raw_query, proj, jn, tbl_urutan, cost_qep_formated]
+                    #for i in data_to_write:
+                    #    print(i)
 
                 else:
                     print("Error query not valid")
@@ -138,10 +163,88 @@ class data (object):
             else:
                 # ini bagian untuk where + selection
                 print("Bagian where")
+                important_data = self.parseWhereQuery(query)
+                #print(type(important_data))
+                col_valid = self.isColumnValid(important_data.get('projection'), important_data.get('table_name'))
+                #print(important_data)
+                #print(col_valid)
+                if col_valid :
+                    print("\tTabel(%d) : %s" % (1, important_data.get('table_name')))
+                    print("\tList kolom : %s" % important_data.get('projection'))
+                    qep_cost = []
+                    for i in range(0,2) :
+                        print(">> QEP #%d" % (i + 1))
+                        print("\tPROJECTION ", end='')
+                        for col in important_data.get('projection'):
+                            if (important_data.get('projection')[-1] == col):
+                                print(col, end=' -- on the fly\n')
+                            else:
+                                print(col, end=', ')
+                        reconstruct = ''
+                        for part in important_data.get('condition') :
+                            reconstruct = reconstruct + part + ' '
+
+                        reconstruct = script.cleanString(reconstruct)
+                        if (i == 0) :
+                            eq = 'A1'
+                        elif i == 1 :
+                            eq = 'A2'
+                        print("\tSELECTION %s -- %s key" % (reconstruct, eq))
+
+                        print("\t%s" % important_data.get('table_name'))
+                        qep_cost.append(99)  # qep_cost.append(ini harus diisi formula hitung qep)
+                        print("\tCost (worst case) : %d block" % qep_cost[i])  # 99 itu placeholder
+
+                    print(">> QEP optimal : QEP#%d" % (qep_cost.index(min(qep_cost)) + 1))
+                else :
+                    print("Error column not valid")
+
+
+
         else :
             print("Error query not valid")
 
    # def calcJoinQEPnCost(self, imp_data : list):
+
+    def parseWhereQuery(self, query):
+        import formatting.script as script
+        query_parse = query.split('from')
+
+        # SELECT nim, nama FROM Mahasiswa WHERE nim = 190;
+
+        # part 1 -> isinya SELECT nim, nama
+        # ini ambil elemen pertama dari array query_parse
+        # ini misahin string jadi list di 'select'
+        # terus ambil elemen terakhir dari string yg dipisahin
+        column_projection_raw = query_parse[0].split('select')[-1]
+
+
+        # part 1 -> indeks 0 isinya select sama colomn buat projection
+        # SELECT nim, nama FROM Mahasiswa JOIN Registrasi using (nim);
+        # Ambil bagian ini nim, nama
+        column_projection = []
+        for column_name in column_projection_raw.split(',') :
+            column_projection.append(script.cleanString(column_name))
+
+        # part 2 -> isinya Mahasiswa JOIN Registrasi using (nim);
+        # ini misahin string jadi list di 'join'
+        # table_name_raw akan berisi
+        # ['Mahasiswa', 'nim = 190;']
+        table_name_raw = query_parse[-1].split('where')
+        #print(table_name_raw)
+
+        # table_name_clean = bagian pertama indeks ke 0
+        table_name = script.cleanString(table_name_raw[0])
+        #print(table_name_raw[-1])
+        #print(table_name_raw[-1].split(' '))
+
+        # condition -> nim = 190
+        cond =  []
+        for isi in script.cleanString(table_name_raw[-1]).split(' ') :
+            cond.append(script.cleanString(isi))
+
+        temp = {'projection' : column_projection, 'table_name' : table_name, 'condition': cond }
+        return (temp)
 
 
 
@@ -149,7 +252,6 @@ class data (object):
 
         # SELECT nim, nama FROM Mahasiswa JOIN Registrasi using (nim);
         import formatting.script as script
-        valid = False
         query_parse = query.split('from')
 
         # part 1 -> isinya SELECT nim, nama
@@ -214,3 +316,38 @@ class data (object):
                 inTabel = False
 
         return inTabel
+
+    def print_shared_pool(self):
+        # baca file shared pool
+        text = open(self.folder_name + "shared_pool.txt", 'r')
+        i = 1
+        temp = []
+        # ini for
+        for line in text:
+            if('\n' != line) :
+                if('\n' == line[-1]) :
+                    temp.append(line[:-1])
+                else :
+                    temp.append(line)
+            elif ('\n' == line) :
+                for j in range(0, temp.__len__()) :
+                    if (j == 0) :
+                        print('%d.\t%s' % (i, temp[j]))
+                    else:
+                        print("\t"+temp[j])
+
+                print()
+                i = i + 1
+                if ('\n' == line[-1]):
+                    temp = []
+
+        # diluar for
+        for j in range(0, temp.__len__()):
+            if (j == 0):
+                print('%d.\t%s' % (i, temp[j]))
+            else:
+                print("\t"+temp[j])
+
+        print()
+
+

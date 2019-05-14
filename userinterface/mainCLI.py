@@ -25,6 +25,7 @@ def mainCLI(dt : data.data) :
             qep_CLI(dt)
         elif (inp == '5'):
             print("Shared Pool")
+            sharedpool_CLI(dt)
         elif (inp.lower() == 'exit'):
             print(">> Exitting")
             exit(12)
@@ -43,7 +44,7 @@ def bfr_fanout_CLI(dt : data.data) :
 def blocking_CLI(dt : data.data) :
     print("Menu 2 : Jumlah Blok")
     for tbl in dt.tb :
-        print("Tabel Data %s \t: %d \tblok" % (tbl.table_name, dt.calcBfr(tbl)))
+        print("Tabel Data %s \t: %d \tblok" % (tbl.table_name, dt.calcJmlBlok(tbl)))
         print("Indeks %s \t\t: %d \tblok" % (tbl.table_name, dt.calcFanout(tbl)))
     print('\n')
     input("Press Enter to continue ....")
@@ -103,8 +104,12 @@ def qep_CLI(dt : data.data) :
     dt.calcQEPnCost(query)
     input("Press Enter to continue ....")
 
-
+def sharedpool_CLI(dt : data.data) :
+    print("Menu 5 :  Shared Pool")
+    dt.print_shared_pool()
+    input("Press Enter to continue ....")
 
 if __name__ == "__main__" :
     import os
+    print(1/2)
     mainCLI(data.data("/min/work/python/Python_SBD_Tubes/assets"))
