@@ -12,17 +12,27 @@ class data (object):
 
         self.getTable(self.tb, 'Mahasiswa')
 
-
-    def calcFanout(self,tbl : table):
-        # harus diisi rumusnya
-
-        return 1
-    def calcBfr(self,tbl : table):
+    def calcFanout(self, tbl: table):
         # harus diisi rumusnya
         from math import floor
-        return (floor(self.db.getBlockSize()/tbl.record_size))
 
-    def calcJmlBlok(self, tbl : table):
+        return floor(self.db.getBlockSize() / (tbl.key_size + self.db.getTidSize()))
+
+    def calcBfr(self, tbl: table):
+        # harus diisi rumusnya
+        from math import floor
+        return (floor(self.db.getBlockSize() / tbl.record_size))
+
+    def calcJmlBlok(self, tbl: table):
+        from math import ceil
+        return (ceil(tbl.record_num / self.calcBfr(tbl)))
+
+    def calcIndeksBlock(self, tbl : table):
+        from math import ceil, floor
+
+        # rumus udah bener
+        return  (ceil(tbl.record_num/self.calcFanout(tbl)))
+        #return ceil(ceil(tbl.record_num/self.calcFanout(tbl))/floor(self.db.getBlockSize()/(tbl.key_size + self.db.getTidSize())))
 
     def isTableExist(self,table_name : str):
         import formatting.script as script
@@ -60,15 +70,108 @@ class data (object):
 
 
     def searchIndeks(self, table_name : str, record_loc : int):
-        # harus diisi rumusnya
+        import math
 
-        return 134
+        # harus diisi rumusnya
+        # nilai fanout
+        # langkahnya
+        fanout = self.calcFanout(self.getTable(self.tb, table_name))
+        # rumusnya record_loc / fanout ratio
+        result = math.ceil(record_loc / fanout)
+        return result
 
     def searchNoIndeks(self, table_name : str, record_loc : int):
+        import math
+
         # harus diisi rumusnya
 
-        return 123
+        bfr = self.calcBfr(self.getTable(self.tb, table_name))
 
+        # rumus = ceil(record_loc/bfr)
+        result = math.ceil(record_loc/bfr)
+        return result
+
+
+    #########NO4
+    def countA1Key (self,b : float) :
+        """
+        Hitung A1 with key
+        :param b: ini small b
+        :return: nilai A1 with key
+        """
+        return float(b/2)
+
+
+    def countA1NoKey(self,b : float):
+        """
+        Hitung A1 tanpa key
+        :param b: ini small b
+        :return:
+        """
+        return float(b)
+
+    def countA2(self, b : float, block_size : int, v : int, P : int):
+        """
+        Hitung A2
+        :param b: itu smallb -> ada func sendiri
+        :param block_size: ini blocksize
+        :param v: v -> yg terakhir di data_dict sebelum hastag
+        :param P:pointer size dari data_dict
+        :return: float yg udah dihitung
+        """
+        import math
+        # b -> small b
+        # block_size -> blockSize
+        # v -> yg terakhir di data_dict sebelum hastag
+        # P -> pointer size dari data_dict
+
+        # rumus
+        # ceil(log(b)/log(floor(block_size/(v+P)))) + 1
+        # no comment cuma ikutin rumus
+        part1 = math.log(b)
+        part2 = math.log(math.floor(block_size /(v + P)))
+        return math.ceil(part1/part2) + 1
+
+    # n jumlah record
+    def calcb(self,n : int, bfr : float ):
+        """
+        Hitung b -> ceil(n/bfr)
+        :param n: record_num
+        :param bfr: nilai bfr dari table tersebut
+        :return: ceil(n/bfr)
+        """
+        # rumus untuk b -> ceil(n/bfr)
+        import math
+        return math.ceil(n/bfr)
+
+    def countA3(self, b : float, block_size : int, v : int, P : int):
+        """
+        Hitung A3
+        :param b: itu smallb -> ada func sendiri
+        :param block_size: ini blocksize
+        :param v: v -> yg terakhir di data_dict sebelum hastag
+        :param P:pointer size dari data_dict
+        :return: float yg udah dihitung
+        """
+        import math
+        # rumus
+        # ceil(log(b)/log(floor(block_size / (v+p))) + b
+        part1 = math.log(b)
+        part2 = math.log(math.floor(block_size / (v + P)))
+        part3 = math.ceil(part1/part2)
+        return part3 + b
+
+"""
+    public double countA3(double b,int B, int v, int P){
+         int x = B / (v+P) ;
+         double y = Math.floor(x);
+         double log = Math.log(b) / Math.log(y);
+         double h1 = Math.ceil(log);
+         double hasil = h1+b;
+         return hasil ;
+     }
+"""
+    #########
 
 
     def calcQEPnCost(self, query: str):
@@ -164,15 +267,18 @@ class data (object):
                 # ini bagian untuk where + selection
                 print("Bagian where")
                 important_data = self.parseWhereQuery(query)
+                # ambil nilai dari object table
+                tab = self.getTable(important_data.get('table_name'))
+
                 #print(type(important_data))
                 col_valid = self.isColumnValid(important_data.get('projection'), important_data.get('table_name'))
                 #print(important_data)
                 #print(col_valid)
                 if col_valid :
-                    print("\tTabel(%d) : %s" % (1, important_data.get('table_name')))
-                    print("\tList kolom : %s" % important_data.get('projection'))
+                    print("\tTabel(%d) : %s" % (1, tab.table_name))
+                    print("\tList kolom : %s" % (str(tab.table_column)))
                     qep_cost = []
-                    for i in range(0,2) :
+                    for i in range(0,4) :
                         print(">> QEP #%d" % (i + 1))
                         print("\tPROJECTION ", end='')
                         for col in important_data.get('projection'):
@@ -185,10 +291,19 @@ class data (object):
                             reconstruct = reconstruct + part + ' '
 
                         reconstruct = script.cleanString(reconstruct)
+                        smallb = self.calcb(tab.record_num, self.calcBfr(tab))
                         if (i == 0) :
-                            eq = 'A1'
+                            eq = 'A1 Key'
+                            qep_cost.append(self.countA1Key(smallb))
                         elif i == 1 :
-                            eq = 'A2'
+                            eq = 'A1 No Key'
+                            qep_cost.append(self.countA1NoKey(smallb))
+                        elif i == 2 :
+                            eq ='A2'
+                            qep_cost.append(self.countA2(smallb,self.db.getBlockSize(), tab.key_size, self.db.getTidSize()))
+                        elif i == 3 :
+                            eq = 'A3'
+                            qep_cost.append()
                         print("\tSELECTION %s -- %s key" % (reconstruct, eq))
 
                         print("\t%s" % important_data.get('table_name'))

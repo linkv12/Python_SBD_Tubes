@@ -45,7 +45,7 @@ def blocking_CLI(dt : data.data) :
     print("Menu 2 : Jumlah Blok")
     for tbl in dt.tb :
         print("Tabel Data %s \t: %d \tblok" % (tbl.table_name, dt.calcJmlBlok(tbl)))
-        print("Indeks %s \t\t: %d \tblok" % (tbl.table_name, dt.calcFanout(tbl)))
+        print("Indeks %s \t\t: %d \tblok" % (tbl.table_name, dt.calcIndeksBlock(tbl)))
     print('\n')
     input("Press Enter to continue ....")
 
@@ -111,5 +111,4 @@ def sharedpool_CLI(dt : data.data) :
 
 if __name__ == "__main__" :
     import os
-    print(1/2)
     mainCLI(data.data("/min/work/python/Python_SBD_Tubes/assets"))
