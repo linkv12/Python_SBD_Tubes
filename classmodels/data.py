@@ -17,7 +17,7 @@ class data (object):
         # harus diisi rumusnya
         from math import floor
         return floor(self.db.getBlockSize()/(tbl.key_size + self.db.getTidSize()))
-    
+
     def calcBfr(self,tbl : table):
         # harus diisi rumusnya
         from math import floor
@@ -28,7 +28,8 @@ class data (object):
         return (ceil(tbl.record_num/self.calcBfr(tbl)))
 
     def calcIndexBlock(self, tbl : table):
-        from
+        from math import ceil
+        return ceil(tbl.record_num/self.calcFanout(tbl))
 
     def isTableExist(self,table_name : str):
         import formatting.script as script
@@ -64,18 +65,19 @@ class data (object):
 
         return None
 
-
     def searchIndeks(self, table_name : str, record_loc : int):
         # harus diisi rumusnya
-
-        return 134
+        import math
+        fanout = self.calcFanout(self.getTable(self.tb, table_name))
+        result = math.ceil(record_loc/fanout)
+        return result
 
     def searchNoIndeks(self, table_name : str, record_loc : int):
         # harus diisi rumusnya
-
-        return 123
-
-
+        import math
+        Bfr = self.calcBfr(self.getTable(self.tb, table_name))
+        result = math.ceil(record_loc/Bfr)
+        return result
 
     def calcQEPnCost(self, query: str):
         import formatting.script as script
@@ -138,7 +140,7 @@ class data (object):
                             print("\t%s\t\t%s" % (join_info[1][0], join_info[1][1]))
                         else:
                             print("\t%s\t\t%s" % (join_info[1][1], join_info[1][0]))
-                        qep_cost.append(99) # qep_cost.append(ini harus diisi formula hitung qep)
+                        qep_cost.append(99) # qep_cost.append(ini harus diisi formula hitung qep).......
                         print("\tCost (worst case) : %d block" % qep_cost[i])  # 99 itu placeholder
 
                     qep_cost[1] = 10
