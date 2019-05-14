@@ -73,42 +73,73 @@ class data (object):
     def calcQEPnCost(self, query: str):
         import formatting.script as script
         query = script.cleanString(query)
-        if ("join" in query.lower()) :
-            print(">> Output:")
-            join_info = self.parseJoinQuery(query.lower())
-            #print(join_info[0])
-            #print(join_info[1][0])
-            part1 = self.isColumnValid(join_info[0],join_info[1][0])
-            part2 = self.isColumnValid([join_info[-1]], join_info[1][1])
 
-            if (part1 and part2) :
-                valid = True
-                for i in range(1,3) :
-                    print("\tTabel(%d) : %s" % (i, join_info[1][i-1]))
-                    if (i == 1) :
-                        print("\tList Kolom : %s" % str(self.getTable(self.tb,join_info[1][0]).table_column))
-                    elif (i == 2) :
-                        print("\tList Kolom : %s" % str([join_info[-1]]))
-                        # (str(self.getTable(self.tb,join_info[1][-1]).table_column))
-
-                for i in range(0,2) :
-                    print(">> QEP #%d" %(i+1))
-                    print("\tPROJECTION ", end='')
-                    for col in join_info[0]:
-                        if (join_info[0][-1] == col) :
-                            print(col, end=' ')
-                            print('-- on the fly')
-                        else :
-                            print(col, end=', ')
-
-                    
+        def isValidEnough(q_ery : str) :
+            if ('select' not in q_ery) :
+                return False
             else :
-                valid = False
+                if ('from' not in q_ery) :
+                    return False
+                else:
+                    if ('join' not in q_ery) :
+                        if ('using' in q_ery) :
+                            return False
+                    else :
+                        if ('using' not in q_ery) :
+                            return False
+
+            return True
+
+        print(isValidEnough(query))
+
+        if (isValidEnough(query)) :
+            if ("join" in query.lower()):
+                print(">> Output:")
+                join_info = self.parseJoinQuery(query.lower())
+                # print(join_info[0])
+                # print(join_info[1][0])
+                part1 = self.isColumnValid(join_info[0], join_info[1][0])
+                part2 = self.isColumnValid([join_info[-1]], join_info[1][1])
+
+                if (part1 and part2):
+                    valid = True
+                    for i in range(1, 3):
+                        print("\tTabel(%d) : %s" % (i, join_info[1][i - 1]))
+                        if (i == 1):
+                            print("\tList Kolom : %s" % str(self.getTable(self.tb, join_info[1][0]).table_column))
+                        elif (i == 2):
+                            print("\tList Kolom : %s" % str([join_info[-1]]))
+                            # (str(self.getTable(self.tb,join_info[1][-1]).table_column))
+
+                    qep_cost = []
+                    for i in range(0, 2):
+                        print(">> QEP #%d" % (i + 1))
+                        print("\tPROJECTION ", end='')
+                        for col in join_info[0]:
+                            if (join_info[0][-1] == col):
+                                print(col, end=' -- on the fly\n')
+                            else:
+                                print(col, end=', ')
+                        print("\t\tJOIN %s.%s = %s.%s -- BNLJ" % (
+                        join_info[1][0], join_info[-1], join_info[1][1], join_info[-1]))
+                        if i == 0:
+                            print("\t%s\t\t%s" % (join_info[1][0], join_info[1][1]))
+                        else:
+                            print("\t%s\t\t%s" % (join_info[1][1], join_info[1][0]))
+                        qep_cost.append(99) # qep_cost.append(ini harus diisi formula hitung qep)
+                        print("\tCost (worst case) : %d block" % qep_cost[i])  # 99 itu placeholder
+
+                    print(">> QEP optimal : QEP#%d" % (qep_cost.index(min(qep_cost)) + 1))
 
 
-            print("finish validation")
+                else:
+                    print("Error query not valid")
+
+            else:
+                # ini bagian untuk where + selection
+                print("Bagian where")
         else :
-            pass
+            print("Error query not valid")
 
    # def calcJoinQEPnCost(self, imp_data : list):
 
