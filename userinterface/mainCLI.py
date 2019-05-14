@@ -112,4 +112,4 @@ def sharedpool_CLI(dt : data.data) :
 if __name__ == "__main__" :
     import os
     print(1/2)
-    mainCLI(data.data("/min/work/python/Python_SBD_Tubes/assets"))
+    mainCLI(data.data("E:\SBD\Tubes_Python/assets"))

@@ -23,6 +23,8 @@ class data (object):
         return (floor(self.db.getBlockSize()/tbl.record_size))
 
     def calcJmlBlok(self, tbl : table):
+        from math import ceil
+        return (ceil(tbl.record_num/self.calcBfr(tbl)))
 
     def isTableExist(self,table_name : str):
         import formatting.script as script
