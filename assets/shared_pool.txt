@@ -1,17 +1,11 @@
-Query :SELECT nim, nama FROM Mahasiswa WHERE nim = 190;
+select nim, nama from mahasiswa join registrasi using (nim
 PROJECTION nim, nama -- on the fly
-SELECTION nim = 190 -- A2
+	JOIN mahasiswa.nim = registrasi.nim -- BNLJ
+registrasi		mahasiswa
+3128.0
+
+select nim from mahasiswa where nim = 19
+PROJECTION nim -- on the fly
+SELECTION nim = 19 -- A2
 Mahasiswa
-Cost : 10 block
-
-Query : SELECT nim, nama FROM Mahasiswa JOIN Registrasi using (nim);
-PROJECTION nim, nama -- on the fly
-              JOIN mahasiswa.nim = registrasi.nim -- Block Nested loop join
-Mahasiswa       Registrasi
-Cost (worst case): 30 block
-
-Query : SELECT nim, nama FROM Mahasiswa JOIN Registrasi using (nim);
-PROJECTION nim, nama -- on the fly
-              JOIN mahasiswa.nim = registrasi.nim -- Block Nested loop join
-MahasiswaWWW       Registrasi
-Cost (worst case): 10 block
+Cost (worst case) : 3 block

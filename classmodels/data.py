@@ -149,8 +149,8 @@ class data (object):
         Hitung A3
         :param b: itu smallb -> ada func sendiri
         :param block_size: ini blocksize
-        :param v: v -> yg terakhir di data_dict sebelum hastag
-        :param P:pointer size dari data_dict
+        :param v: -> yg terakhir di data_dict sebelum hastag
+        :param P: pointer size dari data_dict
         :return: float yg udah dihitung
         """
         import math
@@ -161,16 +161,16 @@ class data (object):
         part3 = math.ceil(part1/part2)
         return part3 + b
 
-"""
-    public double countA3(double b,int B, int v, int P){
-         int x = B / (v+P) ;
-         double y = Math.floor(x);
-         double log = Math.log(b) / Math.log(y);
-         double h1 = Math.ceil(log);
-         double hasil = h1+b;
-         return hasil ;
+    def countBNLJ(self, br : float, bs : float):
+        return float(br*bs)+br
+
+    """
+         public double countBNLJ(double br, double bs){
+         double hasil = (br*bs)+br;
+         return hasil;
      }
-"""
+    """
+
     #########
 
 
@@ -179,6 +179,7 @@ class data (object):
         raw_query = query
         query = script.cleanString(query)
 
+        # ini nested function karena cuma dipake sekali doang
         def isValidEnough(q_ery : str) :
             if ('select' not in q_ery) :
                 return False
@@ -194,20 +195,36 @@ class data (object):
                             return False
 
             return True
-
-        print(isValidEnough(query))
+        # print(isValidEnough(query))
 
         if (isValidEnough(query)) :
             if ("join" in query.lower()):
+                """
+                
+                        double bfrL =countBfr(B, R);
+                        double bl = countb(n, bfrL);
+                        double bfrR  = countBfr(B, R1);
+                        double br = countb(n1, bfrR);
+                        double cost1 = countBNLJ(br, bl);
+                
+                """
                 print(">> Output:")
                 join_info = self.parseJoinQuery(query.lower())
                 # print(join_info[0])
                 # print(join_info[1][0])
                 part1 = self.isColumnValid(join_info[0], join_info[1][0])
                 part2 = self.isColumnValid([join_info[-1]], join_info[1][1])
+                tab1 = self.getTable(self.tb, join_info[1][0])
+                tab2 = self.getTable(self.tb, join_info[1][1])
 
+                bfr_left = self.calcBfr(tab1)                               # table pertama ini setelah from
+                smallb_left = self.calcb(tab1.record_num, bfr_left)         # table pertama ini setelah from
+                bfr_right = self.calcBfr(tab2)                              # table kedua ini setelah join
+                smallb_right = self.calcb(tab2.record_num, bfr_right)       # table kedua ini setelah join
+
+                # ini buat masukin ke shared_pool
+                data_calc_qep = []
                 if (part1 and part2):
-                    valid = True
                     for i in range(1, 3):
                         print("\tTabel(%d) : %s" % (i, join_info[1][i - 1]))
                         if (i == 1):
@@ -224,56 +241,49 @@ class data (object):
                     for i in range(0, 2):
                         print(">> QEP #%d" % (i + 1))
                         print("\tPROJECTION ", end='')
+                        temp_proj = 'PROJECTION '
+
                         for col in join_info[0]:
                             if (join_info[0][-1] == col):
                                 print(col, end=' -- on the fly\n')
+                                temp_proj = temp_proj + col + " -- on the fly"
                             else:
                                 print(col, end=', ')
+                                temp_proj = temp_proj + col + ", "
+
                         print("\t\tJOIN %s.%s = %s.%s -- BNLJ" % (
                         join_info[1][0], join_info[-1], join_info[1][1], join_info[-1]))
+                        temp_join = ("\tJOIN %s.%s = %s.%s -- BNLJ" % (join_info[1][0], join_info[-1], join_info[1][1], join_info[-1]))
+                        temp_tab_name = ''
                         if i == 0:
                             print("\t%s\t\t%s" % (join_info[1][0], join_info[1][1]))
+                            tab_name_temp = ("%s\t\t%s" % (join_info[1][0], join_info[1][1]))
+                            qep_cost.append(self.countBNLJ(smallb_left, smallb_right))
                         else:
                             print("\t%s\t\t%s" % (join_info[1][1], join_info[1][0]))
-                        qep_cost.append(99) # qep_cost.append(ini harus diisi formula hitung qep)
+                            tab_name_temp =("%s\t\t%s" % (join_info[1][1], join_info[1][0]))
+                            qep_cost.append(self.countBNLJ(smallb_right, smallb_left))
                         print("\tCost (worst case) : %d block" % qep_cost[i])  # 99 itu placeholder
+                        data_calc_qep.append([temp_proj, temp_join, tab_name_temp, qep_cost[i]])
 
-                    qep_cost[1] = 10
+
                     print(">> QEP optimal : QEP#%d" % (qep_cost.index(min(qep_cost)) + 1))
+                    idxOptimal = qep_cost.index(min(qep_cost))
+                    self.write_share_pool(query,imp_data=data_calc_qep[idxOptimal])
 
-                    ## ini cuma string formating
-                    proj = "PROJECTION "
-                    for col in join_info[0]:
-                        if (join_info[0][-1] == col):
-                            proj = proj + col + ' -- on the fly'
-                        else:
-                            proj = proj +" " + col + ', '
-                    jn = "\t\tJOIN %s.%s = %s.%s -- BNLJ" % (
-                        join_info[1][0], join_info[-1], join_info[1][1], join_info[-1])
-                    if (qep_cost.index(min(qep_cost)) == 0) :
-                        tbl_urutan = ("%s\t\t%s" % (join_info[1][0], join_info[1][1]))
-                    else :
-                        tbl_urutan = ("%s\t\t%s" % (join_info[1][1], join_info[1][0]))
-
-                    cost_qep_formated = "Cost (worst case) : %d block" % min(qep_cost)
-                    data_to_write =[raw_query, proj, jn, tbl_urutan, cost_qep_formated]
-                    #for i in data_to_write:
-                    #    print(i)
 
                 else:
                     print("Error query not valid")
 
             else:
                 # ini bagian untuk where + selection
-                print("Bagian where")
+                #print("Bagian where")
                 important_data = self.parseWhereQuery(query)
                 # ambil nilai dari object table
-                tab = self.getTable(important_data.get('table_name'))
-
-                #print(type(important_data))
+                tab = self.getTable(self.tb, important_data.get('table_name'))
                 col_valid = self.isColumnValid(important_data.get('projection'), important_data.get('table_name'))
-                #print(important_data)
-                #print(col_valid)
+
+                data_calc_qep = []
                 if col_valid :
                     print("\tTabel(%d) : %s" % (1, tab.table_name))
                     print("\tList kolom : %s" % (str(tab.table_column)))
@@ -281,11 +291,15 @@ class data (object):
                     for i in range(0,4) :
                         print(">> QEP #%d" % (i + 1))
                         print("\tPROJECTION ", end='')
+                        temp_proj = "PROJECTION "
                         for col in important_data.get('projection'):
                             if (important_data.get('projection')[-1] == col):
                                 print(col, end=' -- on the fly\n')
+                                temp_proj = temp_proj + col + " -- on the fly"
                             else:
                                 print(col, end=', ')
+                                temp_proj = temp_proj + col + ", "
+
                         reconstruct = ''
                         for part in important_data.get('condition') :
                             reconstruct = reconstruct + part + ' '
@@ -303,14 +317,19 @@ class data (object):
                             qep_cost.append(self.countA2(smallb,self.db.getBlockSize(), tab.key_size, self.db.getTidSize()))
                         elif i == 3 :
                             eq = 'A3'
-                            qep_cost.append()
-                        print("\tSELECTION %s -- %s key" % (reconstruct, eq))
-
+                            qep_cost.append(self.countA3(smallb,self.db.getBlockSize(), tab.key_size, self.db.getTidSize()))
+                        print("\tSELECTION %s -- %s" % (reconstruct, eq))
                         print("\t%s" % important_data.get('table_name'))
-                        qep_cost.append(99)  # qep_cost.append(ini harus diisi formula hitung qep)
                         print("\tCost (worst case) : %d block" % qep_cost[i])  # 99 itu placeholder
 
+                        # temporary var untuk simpen bagian selection dari query
+                        temp_sel = "SELECTION %s -- %s" % (reconstruct, eq)
+                        # temporary var untuk pegang nilai bagian cost worstcase
+                        temp_cost = "Cost (worst case) : %d block" % qep_cost[i]
+                        data_calc_qep.append([temp_proj, temp_sel, tab.table_name, temp_cost])
                     print(">> QEP optimal : QEP#%d" % (qep_cost.index(min(qep_cost)) + 1))
+                    idxOptimal = qep_cost.index(min(qep_cost))
+                    self.write_share_pool(query,imp_data=data_calc_qep[idxOptimal])
                 else :
                     print("Error column not valid")
 
@@ -432,6 +451,16 @@ class data (object):
 
         return inTabel
 
+    def write_share_pool(self, query : str, imp_data : list):
+        import os
+        with open(self.folder_name + "shared_pool.txt", 'a') as file :
+            if (os.stat(self.folder_name + "shared_pool.txt").st_size != 0) :
+                file.write('\n')
+            file.write(query+'\n')
+            for line in imp_data :
+                file.write(str(line)+'\n')
+
+
     def print_shared_pool(self):
         # baca file shared pool
         text = open(self.folder_name + "shared_pool.txt", 'r')
@@ -464,5 +493,10 @@ class data (object):
                 print("\t"+temp[j])
 
         print()
+
+
+
+
+
 
 
