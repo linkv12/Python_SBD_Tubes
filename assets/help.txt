@@ -1,0 +1,6 @@
+P -> pointer
+B -> block size
+
+R -> record size
+n -> total record
+V -> ukuran atribut kunci TID
