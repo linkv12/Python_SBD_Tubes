@@ -96,19 +96,10 @@ class data (object):
 
         if (isValidEnough(query)):
             if ("join" in query.lower()):
-                """
-
-                        double bfrL =countBfr(B, R);
-                        double bl = countb(n, bfrL);
-                        double bfrR  = countBfr(B, R1);
-                        double br = countb(n1, bfrR);
-                        double cost1 = countBNLJ(br, bl);
-
-                """
                 print(">> Output:")
                 join_info = self.parseJoinQuery(query.lower())
-                # print(join_info[0])
-                # print(join_info[1][0])
+                print(join_info[0], join_info[1][0])
+                print([join_info[-1]], join_info[1][1])
                 part1 = self.isColumnValid(join_info[0], join_info[1][0])
                 part2 = self.isColumnValid([join_info[-1]], join_info[1][1])
                 tab1 = self.getTable(self.tb, join_info[1][0])
@@ -121,6 +112,7 @@ class data (object):
 
                 # ini buat masukin ke shared_pool
                 data_calc_qep = []
+                print(str(part1) + " " + str(part2))
                 if (part1 and part2):
                     for i in range(1, 3):
                         print("\tTabel(%d) : %s" % (i, join_info[1][i - 1]))
@@ -166,7 +158,7 @@ class data (object):
 
                     print(">> QEP optimal : QEP#%d" % (qep_cost.index(min(qep_cost)) + 1))
                     idxOptimal = qep_cost.index(min(qep_cost))
-                    self.write_share_pool(query, imp_data=data_calc_qep[idxOptimal])
+                    self.write_share_pool(raw_query, imp_data=data_calc_qep[idxOptimal])
 
 
                 else:
@@ -198,10 +190,14 @@ class data (object):
                                 temp_proj = temp_proj + col + ", "
 
                         reconstruct = ''
-                        for part in important_data.get('condition'):
-                            reconstruct = reconstruct + part + ' '
+                        if important_data.get('condition') == None :
+                            for part in important_data.get('condition'):
+                                reconstruct = reconstruct + part + ' '
+                            reconstruct = script.cleanString(reconstruct)
+                        else :
+                            reconstruct = None
 
-                        reconstruct = script.cleanString(reconstruct)
+
                         smallb = self.calcb(tab.record_num, self.calcBfr(tab))
                         if (i == 0):
                             eq = 'A1 Key'
@@ -222,13 +218,13 @@ class data (object):
                         print("\tCost (worst case) : %d block" % qep_cost[i])  # 99 itu placeholder
 
                         # temporary var untuk simpen bagian selection dari query
-                        temp_sel = "SELECTION %s -- %s" % (reconstruct, eq)
+                        temp_sel = "SELECTION %s -- %s" % (str(reconstruct), eq)
                         # temporary var untuk pegang nilai bagian cost worstcase
                         temp_cost = "Cost (worst case) : %d block" % qep_cost[i]
                         data_calc_qep.append([temp_proj, temp_sel, tab.table_name, temp_cost])
                     print(">> QEP optimal : QEP#%d" % (qep_cost.index(min(qep_cost)) + 1))
                     idxOptimal = qep_cost.index(min(qep_cost))
-                    self.write_share_pool(query, imp_data=data_calc_qep[idxOptimal])
+                    self.write_share_pool(raw_query, imp_data=data_calc_qep[idxOptimal])
                 else:
                     print("Error column not valid")
 
@@ -385,7 +381,19 @@ class data (object):
         # ini misahin string jadi list di 'join'
         # table_name_raw akan berisi
         # ['Mahasiswa', 'nim = 190;']
-        table_name_raw = query_parse[-1].split('where')
+        if ('where' in query_parse[-1]) :
+            table_name_raw = query_parse[-1].split('where')
+            ##### klo ada condition
+            ###################
+            # condition -> nim = 190
+            cond = []
+            for isi in script.cleanString(table_name_raw[-1]).split(' '):
+                cond.append(script.cleanString(isi))
+        else :
+            table_name_raw = list(script.cleanString(query_parse[-1]))
+            ###################
+            # condition -> nim = 190
+            cond = None
         #print(table_name_raw)
 
         # table_name_clean = bagian pertama indeks ke 0
@@ -399,20 +407,20 @@ class data (object):
         if (column_projection_raw.lower() == '*'):
             # ini ambil semua kolomnya langsung
             column_projection = self.getTable(self.tb, table_name).table_column
-        else :
-            for column_name in column_projection_raw.split(','):
-                column_projection.append(script.cleanString(column_name))
+        else:
+            if (',' not in column_projection_raw):
+                column_projection.append(column_projection_raw)
+            else:
+                # ini klo ada comma
+                for column_name in column_projection_raw.split(','):
+                    column_projection.append(script.cleanString(column_name))
 
 
-        ###################
-        # condition -> nim = 190
-        cond =  []
-        for isi in script.cleanString(table_name_raw[-1]).split(' ') :
-            cond.append(script.cleanString(isi))
+        #############
 
         temp = {'projection' : column_projection, 'table_name' : table_name, 'condition': cond }
         return (temp)
-    ################
+        ################
 
     # ini parsing untuk query where
     # ini misahin string terus kembaliin bagian penting
@@ -428,13 +436,16 @@ class data (object):
         # terus ambil elemen terakhir dari string yg dipisahin
         column_projection_raw = query_parse[0].split('select')[-1]
 
+        # bersihin column_projection_raw
+        # karena mungkin aja *
+        column_projection_raw = script.cleanString(column_projection_raw)
+
 
         # part 1 -> indeks 0 isinya select sama colomn buat projection
         # SELECT nim, nama FROM Mahasiswa JOIN Registrasi using (nim);
         # Ambil bagian ini nim, nama
         column_projection = []
-        for column_name in column_projection_raw.split(',') :
-            column_projection.append(script.cleanString(column_name))
+
 
         # part 2 -> isinya Mahasiswa JOIN Registrasi using (nim);
         # ini misahin string jadi list di 'join'
@@ -454,6 +465,23 @@ class data (object):
             table_name.append(script.cleanString(t_name))
 
 
+        # part 1.5
+        # ini lanjutannya klo * jaga jaga
+        print(type(column_projection_raw))
+        print(table_name)
+        if (column_projection_raw == '*'):
+            # ini ambil semua kolomnya langsung
+            temp_tab = self.getTable(self.tb, table_name[0])
+            column_projection = temp_tab.table_column
+        else:
+            if (',' not in column_projection_raw):
+                column_projection.append(column_projection_raw)
+            else:
+                # ini klo ada comma
+                for column_name in column_projection_raw.split(','):
+                    column_projection.append(script.cleanString(column_name))
+
+        print(column_projection)
         # part 3 -> ini bagian dimana isinya using
         # di join dimana
         # langkah langkahnya ->
@@ -481,6 +509,7 @@ class data (object):
 
 
         inTabel = True
+
 
         for col in column :
             if (col.lower() not in table_col.table_column) :

@@ -28,7 +28,7 @@ class table (object) :
         print("Table Column \t: %s" % str(self.table_column))
         print ("Record Size \t: %d" % self.record_size)
         print("Record num   \t: %d" % self.record_num)
-        print("Tid Size     \t: %d" % self.tid_size)
+        print("Key Size     \t: %d" % self.key_size)
 
 
 

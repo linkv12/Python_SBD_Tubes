@@ -1,17 +1,29 @@
-select nim, nama from mahasiswa join registrasi using (nim
+select nim, nama from mahasiswa join registrasi using (nim);
 PROJECTION nim, nama -- on the fly
 	JOIN mahasiswa.nim = registrasi.nim -- BNLJ
 registrasi		mahasiswa
 3128.0
 
-select nim from mahasiswa where nim = 19
-PROJECTION nim -- on the fly
-SELECTION nim = 19 -- A2
+select nim, nama from mahasiswa join registrasi using (nim);
+PROJECTION nim, nama -- on the fly
+	JOIN mahasiswa.nim = registrasi.nim -- BNLJ
+registrasi		mahasiswa
+3128.0
+
+select * from mahasiswa join registrasi using (nim);
+PROJECTION nim, nama, alamat, ipk -- on the fly
+	JOIN mahasiswa.nim = registrasi.nim -- BNLJ
+registrasi		mahasiswa
+3128.0
+
+select * from mahasiswa where nim = 10;
+PROJECTION nim, nama, alamat, ipk -- on the fly
+SELECTION nim = 10 -- A2
 Mahasiswa
 Cost (worst case) : 3 block
 
-select nim from mahasiswa where nim = 1
-PROJECTION nim -- on the fly
-SELECTION nim = 1 -- A2
+select * from mahasiswa where nim = 10;
+PROJECTION nim, nama, alamat, ipk -- on the fly
+SELECTION None -- A2
 Mahasiswa
 Cost (worst case) : 3 block
