@@ -1,3 +1,4 @@
+# bersihin string
 def cleanString(string) :
     while (string[-1] == ' ' or string[-1] == '#' or string[-1] == ')' or string[-1] == ";") :
         if string[-1] == ' ' :
@@ -16,18 +17,21 @@ def cleanString(string) :
 
     return string
 
+# hilangin hastag di char terakhir
 def removeLastHashTag (string) :
     if string[-1] == '#' :
         return string[:-1]
     else :
         return string
 
+# hilangin space di char terakhir
 def removeLastSpace (string) :
     if string[-1] == ' ' :
         return string[:-1]
     else :
         return string
 
+# hilangin space di char pertama
 def removeFirstSpace (string) :
     if string[0] == ' ' :
         return string[1:]

@@ -1,5 +1,7 @@
 import classmodels.data as data
 
+
+# ini main cli butuh object data untuk parameter
 def mainCLI(dt : data.data) :
     shouldrun = True
     while (shouldrun) :
@@ -11,7 +13,7 @@ def mainCLI(dt : data.data) :
     [4]\tTampilkan QEP dan Cost
     [5]\tTampilkan Isi File Shared Pool"""
         )
-
+        # input user
         inp = input(">> Masukan Pilihan Anda: ")
         print('\n')
         if (inp == '1'):
@@ -28,10 +30,12 @@ def mainCLI(dt : data.data) :
             sharedpool_CLI(dt)
         elif (inp.lower() == 'exit'):
             print(">> Exitting")
-            exit(12)
+            shouldrun = False
         else:
             print("Unknown")
 
+
+# klo pilih 1
 def bfr_fanout_CLI(dt : data.data) :
     print("Menu 1 : BFR dan Fan Out Ratio")
     for tbl in dt.tb :
@@ -40,7 +44,7 @@ def bfr_fanout_CLI(dt : data.data) :
     print('\n')
     input("Press Enter to continue ....")
 
-
+# klo pilih 2
 def blocking_CLI(dt : data.data) :
     print("Menu 2 : Jumlah Blok")
     for tbl in dt.tb :
@@ -49,6 +53,8 @@ def blocking_CLI(dt : data.data) :
     print('\n')
     input("Press Enter to continue ....")
 
+
+# klo pilih 3
 def record_search_CLI(dt : data.data) :
     print("Menu 3 : Pencarian Rekord")
     print("Input:")
@@ -97,6 +103,7 @@ def record_search_CLI(dt : data.data) :
         print("Error invalid input")
         input("Press Enter to continue ....")
 
+# klo pilih 4
 def qep_CLI(dt : data.data) :
     print("Menu 4 :  QEP dan Cost")
     print("Input Query:")
@@ -104,11 +111,9 @@ def qep_CLI(dt : data.data) :
     dt.calcQEPnCost(query)
     input("Press Enter to continue ....")
 
+# klo pilih 5
 def sharedpool_CLI(dt : data.data) :
     print("Menu 5 :  Shared Pool")
     dt.print_shared_pool()
     input("Press Enter to continue ....")
 
-if __name__ == "__main__" :
-    import os
-    mainCLI(data.data("/min/work/python/Python_SBD_Tubes/assets"))

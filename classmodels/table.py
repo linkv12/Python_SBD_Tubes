@@ -1,6 +1,8 @@
 class table (object) :
 
-    def __init__(self, line):
+    # constructor
+    # butuh str mentah dari file
+    def __init__(self, line : str):
         import formatting.script as script
         # pisahin di tanda #
         temp_data = line.split(';')
@@ -20,7 +22,7 @@ class table (object) :
         self.record_num = int(temp_data[3].split(' ')[-1])
         self.key_size = int(temp_data[-1].split(' ')[-1])
 
-
+    # ini untuk print variable dari tabel
     def print_table(self):
         print("Table Name   \t: %s" % self.table_name)
         print("Table Column \t: %s" % str(self.table_column))
@@ -30,8 +32,9 @@ class table (object) :
 
 
 
-
-def createTablefromFile(file_name) :
+# ini baca dari file
+# terus kembaliin list dari semua table yang udah di initialize
+def createTablefromFile(file_name : str) :
 
     # open file yg namanya file_name
     file_temp = open(file_name, 'r')

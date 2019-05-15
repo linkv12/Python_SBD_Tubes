@@ -1,11 +1,7 @@
 import os
 from classmodels.data import data
+from userinterface import mainCLI
 
-print(os.getcwd()+"/assets")
-x = data(os.getcwd()+"/assets")
-
-try :
-    print(int('two'))
-except Exception as e :
-    print(e)
-    print('2')
+if __name__ == "__main__" :
+    import os
+    mainCLI.mainCLI(data(os.getcwd()+"/assets"))

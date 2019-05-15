@@ -1,5 +1,6 @@
 class database (object) :
 
+    # constructor
     def __init__(self, file_name):
         import formatting.script as script
 
@@ -26,6 +27,8 @@ class database (object) :
         #print("p_size : %d" % self._pointersize)
         #print("b_size : %d" % self._blocksize)
 
+    # ini getter
+    # ambil private variable
     def getTidSize(self):
         return self._tid_size
 

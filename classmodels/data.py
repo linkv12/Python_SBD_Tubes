@@ -2,6 +2,7 @@ import classmodels.table as table
 
 
 class data (object):
+    # constructor
     def __init__(self, folder_name):
         import classmodels.database as database
         self.folder_name = folder_name + '/'
@@ -9,9 +10,10 @@ class data (object):
         self.tb = table.createTablefromFile(self.folder_name + "data_dict.txt")
 
 
+        # cek dalam constructor
+        #self.getTable(self.tb, 'Mahasiswa')
 
-        self.getTable(self.tb, 'Mahasiswa')
-
+    ################# NO 1
     def calcFanout(self, tbl: table):
         # harus diisi rumusnya
         from math import floor
@@ -23,63 +25,37 @@ class data (object):
         from math import floor
         return (floor(self.db.getBlockSize() / tbl.record_size))
 
+#############################
+
+################### NO 2
+    # ini hitung jumlah blok yg dipake tbl -> table
     def calcJmlBlok(self, tbl: table):
         from math import ceil
         return (ceil(tbl.record_num / self.calcBfr(tbl)))
 
+    # ini hitung jumlah blok yg dipake indeks dari tbl -> table
     def calcIndeksBlock(self, tbl : table):
         from math import ceil, floor
-
         # rumus udah bener
         return  (ceil(tbl.record_num/self.calcFanout(tbl)))
-        #return ceil(ceil(tbl.record_num/self.calcFanout(tbl))/floor(self.db.getBlockSize()/(tbl.key_size + self.db.getTidSize())))
 
-    def isTableExist(self,table_name : str):
-        import formatting.script as script
-        found = False
-        table_name = script.cleanString(table_name)
-        for tab in self.tb :
-            if (table_name == tab.table_name) :
-                found = True
-
-        return found
-
-    def validateRecordPosition(self,table_name : str ,record_num : int):
-        temp_table = self.getTable(self.tb, table_name)
-        if (temp_table != None) :
-            if (record_num <= 0):
-                return False
-            elif (record_num > temp_table.record_num):
-                return False
-            else:
-                return True
-        else :
-            return False
-
-    def getTable(self,tb : list, table_name : str) :
-        #print(tb)
-        #print(table_name)
-        #for i in tb :
-        #    i.print_table()
-        for tabel in tb :
-            if (tabel.table_name.lower() == table_name.lower()) :
-                #print ('x')
-                return tabel
-
-        return None
+ ##########################
 
 
+################ NO 3
+    # ini search menggunakan indeks
+    # no 3 di cli
     def searchIndeks(self, table_name : str, record_loc : int):
         import math
-
-        # harus diisi rumusnya
-        # nilai fanout
         # langkahnya
         fanout = self.calcFanout(self.getTable(self.tb, table_name))
         # rumusnya record_loc / fanout ratio
         result = math.ceil(record_loc / fanout)
         return result
 
+    # ini search tanpa indeks
+    # no 3 di cli
+    # pke BFR
     def searchNoIndeks(self, table_name : str, record_loc : int):
         import math
 
@@ -90,123 +66,44 @@ class data (object):
         # rumus = ceil(record_loc/bfr)
         result = math.ceil(record_loc/bfr)
         return result
+##################################
 
-
-    #########NO4
-    def countA1Key (self,b : float) :
-        """
-        Hitung A1 with key
-        :param b: ini small b
-        :return: nilai A1 with key
-        """
-        return float(b/2)
-
-
-    def countA1NoKey(self,b : float):
-        """
-        Hitung A1 tanpa key
-        :param b: ini small b
-        :return:
-        """
-        return float(b)
-
-    def countA2(self, b : float, block_size : int, v : int, P : int):
-        """
-        Hitung A2
-        :param b: itu smallb -> ada func sendiri
-        :param block_size: ini blocksize
-        :param v: v -> yg terakhir di data_dict sebelum hastag
-        :param P:pointer size dari data_dict
-        :return: float yg udah dihitung
-        """
-        import math
-        # b -> small b
-        # block_size -> blockSize
-        # v -> yg terakhir di data_dict sebelum hastag
-        # P -> pointer size dari data_dict
-
-        # rumus
-        # ceil(log(b)/log(floor(block_size/(v+P)))) + 1
-        # no comment cuma ikutin rumus
-        part1 = math.log(b)
-        part2 = math.log(math.floor(block_size /(v + P)))
-        return math.ceil(part1/part2) + 1
-
-    # n jumlah record
-    def calcb(self,n : int, bfr : float ):
-        """
-        Hitung b -> ceil(n/bfr)
-        :param n: record_num
-        :param bfr: nilai bfr dari table tersebut
-        :return: ceil(n/bfr)
-        """
-        # rumus untuk b -> ceil(n/bfr)
-        import math
-        return math.ceil(n/bfr)
-
-    def countA3(self, b : float, block_size : int, v : int, P : int):
-        """
-        Hitung A3
-        :param b: itu smallb -> ada func sendiri
-        :param block_size: ini blocksize
-        :param v: -> yg terakhir di data_dict sebelum hastag
-        :param P: pointer size dari data_dict
-        :return: float yg udah dihitung
-        """
-        import math
-        # rumus
-        # ceil(log(b)/log(floor(block_size / (v+p))) + b
-        part1 = math.log(b)
-        part2 = math.log(math.floor(block_size / (v + P)))
-        part3 = math.ceil(part1/part2)
-        return part3 + b
-
-    def countBNLJ(self, br : float, bs : float):
-        return float(br*bs)+br
-
-    """
-         public double countBNLJ(double br, double bs){
-         double hasil = (br*bs)+br;
-         return hasil;
-     }
-    """
-
-    #########
-
-
+#########NO4
+################ ini cli nya
     def calcQEPnCost(self, query: str):
         import formatting.script as script
         raw_query = query
         query = script.cleanString(query)
 
         # ini nested function karena cuma dipake sekali doang
-        def isValidEnough(q_ery : str) :
-            if ('select' not in q_ery) :
+        def isValidEnough(q_ery: str):
+            if ('select' not in q_ery):
                 return False
-            else :
-                if ('from' not in q_ery) :
+            else:
+                if ('from' not in q_ery):
                     return False
                 else:
-                    if ('join' not in q_ery) :
-                        if ('using' in q_ery) :
+                    if ('join' not in q_ery):
+                        if ('using' in q_ery):
                             return False
-                    else :
-                        if ('using' not in q_ery) :
+                    else:
+                        if ('using' not in q_ery):
                             return False
 
             return True
+
         # print(isValidEnough(query))
 
-        if (isValidEnough(query)) :
+        if (isValidEnough(query)):
             if ("join" in query.lower()):
                 """
-                
+
                         double bfrL =countBfr(B, R);
                         double bl = countb(n, bfrL);
                         double bfrR  = countBfr(B, R1);
                         double br = countb(n1, bfrR);
                         double cost1 = countBNLJ(br, bl);
-                
+
                 """
                 print(">> Output:")
                 join_info = self.parseJoinQuery(query.lower())
@@ -217,10 +114,10 @@ class data (object):
                 tab1 = self.getTable(self.tb, join_info[1][0])
                 tab2 = self.getTable(self.tb, join_info[1][1])
 
-                bfr_left = self.calcBfr(tab1)                               # table pertama ini setelah from
-                smallb_left = self.calcb(tab1.record_num, bfr_left)         # table pertama ini setelah from
-                bfr_right = self.calcBfr(tab2)                              # table kedua ini setelah join
-                smallb_right = self.calcb(tab2.record_num, bfr_right)       # table kedua ini setelah join
+                bfr_left = self.calcBfr(tab1)  # table pertama ini setelah from
+                smallb_left = self.calcb(tab1.record_num, bfr_left)  # table pertama ini setelah from
+                bfr_right = self.calcBfr(tab2)  # table kedua ini setelah join
+                smallb_right = self.calcb(tab2.record_num, bfr_right)  # table kedua ini setelah join
 
                 # ini buat masukin ke shared_pool
                 data_calc_qep = []
@@ -252,8 +149,9 @@ class data (object):
                                 temp_proj = temp_proj + col + ", "
 
                         print("\t\tJOIN %s.%s = %s.%s -- BNLJ" % (
+                            join_info[1][0], join_info[-1], join_info[1][1], join_info[-1]))
+                        temp_join = ("\tJOIN %s.%s = %s.%s -- BNLJ" % (
                         join_info[1][0], join_info[-1], join_info[1][1], join_info[-1]))
-                        temp_join = ("\tJOIN %s.%s = %s.%s -- BNLJ" % (join_info[1][0], join_info[-1], join_info[1][1], join_info[-1]))
                         temp_tab_name = ''
                         if i == 0:
                             print("\t%s\t\t%s" % (join_info[1][0], join_info[1][1]))
@@ -261,15 +159,14 @@ class data (object):
                             qep_cost.append(self.countBNLJ(smallb_left, smallb_right))
                         else:
                             print("\t%s\t\t%s" % (join_info[1][1], join_info[1][0]))
-                            tab_name_temp =("%s\t\t%s" % (join_info[1][1], join_info[1][0]))
+                            tab_name_temp = ("%s\t\t%s" % (join_info[1][1], join_info[1][0]))
                             qep_cost.append(self.countBNLJ(smallb_right, smallb_left))
                         print("\tCost (worst case) : %d block" % qep_cost[i])  # 99 itu placeholder
                         data_calc_qep.append([temp_proj, temp_join, tab_name_temp, qep_cost[i]])
 
-
                     print(">> QEP optimal : QEP#%d" % (qep_cost.index(min(qep_cost)) + 1))
                     idxOptimal = qep_cost.index(min(qep_cost))
-                    self.write_share_pool(query,imp_data=data_calc_qep[idxOptimal])
+                    self.write_share_pool(query, imp_data=data_calc_qep[idxOptimal])
 
 
                 else:
@@ -277,18 +174,18 @@ class data (object):
 
             else:
                 # ini bagian untuk where + selection
-                #print("Bagian where")
+                # print("Bagian where")
                 important_data = self.parseWhereQuery(query)
                 # ambil nilai dari object table
                 tab = self.getTable(self.tb, important_data.get('table_name'))
                 col_valid = self.isColumnValid(important_data.get('projection'), important_data.get('table_name'))
 
                 data_calc_qep = []
-                if col_valid :
+                if col_valid:
                     print("\tTabel(%d) : %s" % (1, tab.table_name))
                     print("\tList kolom : %s" % (str(tab.table_column)))
                     qep_cost = []
-                    for i in range(0,4) :
+                    for i in range(0, 4):
                         print(">> QEP #%d" % (i + 1))
                         print("\tPROJECTION ", end='')
                         temp_proj = "PROJECTION "
@@ -301,23 +198,25 @@ class data (object):
                                 temp_proj = temp_proj + col + ", "
 
                         reconstruct = ''
-                        for part in important_data.get('condition') :
+                        for part in important_data.get('condition'):
                             reconstruct = reconstruct + part + ' '
 
                         reconstruct = script.cleanString(reconstruct)
                         smallb = self.calcb(tab.record_num, self.calcBfr(tab))
-                        if (i == 0) :
+                        if (i == 0):
                             eq = 'A1 Key'
                             qep_cost.append(self.countA1Key(smallb))
-                        elif i == 1 :
+                        elif i == 1:
                             eq = 'A1 No Key'
                             qep_cost.append(self.countA1NoKey(smallb))
-                        elif i == 2 :
-                            eq ='A2'
-                            qep_cost.append(self.countA2(smallb,self.db.getBlockSize(), tab.key_size, self.db.getTidSize()))
-                        elif i == 3 :
+                        elif i == 2:
+                            eq = 'A2'
+                            qep_cost.append(
+                                self.countA2(smallb, self.db.getBlockSize(), tab.key_size, self.db.getTidSize()))
+                        elif i == 3:
                             eq = 'A3'
-                            qep_cost.append(self.countA3(smallb,self.db.getBlockSize(), tab.key_size, self.db.getTidSize()))
+                            qep_cost.append(
+                                self.countA3(smallb, self.db.getBlockSize(), tab.key_size, self.db.getTidSize()))
                         print("\tSELECTION %s -- %s" % (reconstruct, eq))
                         print("\t%s" % important_data.get('table_name'))
                         print("\tCost (worst case) : %d block" % qep_cost[i])  # 99 itu placeholder
@@ -329,17 +228,135 @@ class data (object):
                         data_calc_qep.append([temp_proj, temp_sel, tab.table_name, temp_cost])
                     print(">> QEP optimal : QEP#%d" % (qep_cost.index(min(qep_cost)) + 1))
                     idxOptimal = qep_cost.index(min(qep_cost))
-                    self.write_share_pool(query,imp_data=data_calc_qep[idxOptimal])
-                else :
+                    self.write_share_pool(query, imp_data=data_calc_qep[idxOptimal])
+                else:
                     print("Error column not valid")
 
 
 
-        else :
+        else:
             print("Error query not valid")
 
-   # def calcJoinQEPnCost(self, imp_data : list):
+######## ini function yg kepake
+    def countA1Key (self,b : float) :
+        """
+        Hitung A1 with key
+        :param b: ini small b
+        :return: nilai A1 with key
+        """
+        return float(b/2)
 
+
+######### Bagian hitung cost
+    # sesuai rumus
+    def countA1NoKey(self,b : float):
+        """
+        Hitung A1 tanpa key
+        :param b: ini small b
+        :return:
+        """
+        return float(b)
+
+    def countA2(self, b : float, block_size : int, v : int, P : int):
+        """
+        Hitung A2
+        :param b: itu smallb -> ada func sendiri
+        :param block_size: ini blocksize
+        :param v: v -> yg terakhir di data_dict sebelum hastag
+        :param P:pointer size dari data_dict
+        :return: float yg udah dihitung
+        """
+        import math
+        # b -> small b
+        # block_size -> blockSize
+        # v -> yg terakhir di data_dict sebelum hastag
+        # P -> pointer size dari data_dict
+
+        # rumus
+        # ceil(log(b)/log(floor(block_size/(v+P)))) + 1
+        # no comment cuma ikutin rumus
+        part1 = math.log(b)
+        part2 = math.log(math.floor(block_size /(v + P)))
+        return math.ceil(part1/part2) + 1
+
+    def calcb(self,n : int, bfr : float ):
+        """
+        Hitung b -> ceil(n/bfr)
+        :param n: record_num
+        :param bfr: nilai bfr dari table tersebut
+        :return: ceil(n/bfr)
+        """
+        # rumus untuk b -> ceil(n/bfr)
+        import math
+        return math.ceil(n/bfr)
+
+    def countA3(self, b : float, block_size : int, v : int, P : int):
+        """
+        Hitung A3
+        :param b: itu smallb -> ada func sendiri
+        :param block_size: ini blocksize
+        :param v: -> yg terakhir di data_dict sebelum hastag
+        :param P: pointer size dari data_dict
+        :return: float yg udah dihitung
+        """
+        import math
+        # rumus
+        # ceil(log(b)/log(floor(block_size / (v+p))) + b
+        part1 = math.log(b)
+        part2 = math.log(math.floor(block_size / (v + P)))
+        part3 = math.ceil(part1/part2)
+        return part3 + b
+
+    def countBNLJ(self, br : float, bs : float):
+        return float(br*bs)+br
+
+#########
+
+
+    #################### function lain
+    # cek apakah table dengan nama table_nama ada
+    # di class data
+    def isTableExist(self,table_name : str):
+        import formatting.script as script
+        found = False
+        table_name = script.cleanString(table_name)
+        for tab in self.tb :
+            if (table_name == tab.table_name) :
+                found = True
+
+        return found
+    # ini cek apakah inputan user
+    # lebih kecil dari record num di tabel tersebut
+    def validateRecordPosition(self,table_name : str ,record_num : int):
+        temp_table = self.getTable(self.tb, table_name)
+        if (temp_table != None) :
+            if (record_num <= 0):
+                return False
+            elif (record_num > temp_table.record_num):
+                return False
+            else:
+                return True
+        else :
+            return False
+
+    # ambil tabel dari list dabel yang dikasih
+    # klo tablenya ada
+    def getTable(self,tb : list, table_name : str) :
+        for tabel in tb :
+            if (tabel.table_name.lower() == table_name.lower()) :
+                #print ('x')
+                return tabel
+
+        return None
+    ####################################
+
+
+
+
+
+
+    # ini parsing untuk query join
+    # ini misahin string terus kembaliin bagian penting
     def parseWhereQuery(self, query):
         import formatting.script as script
         query_parse = query.split('from')
@@ -352,13 +369,17 @@ class data (object):
         # terus ambil elemen terakhir dari string yg dipisahin
         column_projection_raw = query_parse[0].split('select')[-1]
 
+        # bersihin column_projection_raw
+        # karena mungkin aja *
+        column_projection_raw = script.cleanString(column_projection_raw)
+
 
         # part 1 -> indeks 0 isinya select sama colomn buat projection
         # SELECT nim, nama FROM Mahasiswa JOIN Registrasi using (nim);
         # Ambil bagian ini nim, nama
         column_projection = []
-        for column_name in column_projection_raw.split(',') :
-            column_projection.append(script.cleanString(column_name))
+
+        # dilanjutin di part 1.5
 
         # part 2 -> isinya Mahasiswa JOIN Registrasi using (nim);
         # ini misahin string jadi list di 'join'
@@ -372,6 +393,18 @@ class data (object):
         #print(table_name_raw[-1])
         #print(table_name_raw[-1].split(' '))
 
+        # part 1.5
+        # ini lanjutannya klo * jaga jaga
+
+        if (column_projection_raw.lower() == '*'):
+            # ini ambil semua kolomnya langsung
+            column_projection = self.getTable(self.tb, table_name).table_column
+        else :
+            for column_name in column_projection_raw.split(','):
+                column_projection.append(script.cleanString(column_name))
+
+
+        ###################
         # condition -> nim = 190
         cond =  []
         for isi in script.cleanString(table_name_raw[-1]).split(' ') :
@@ -379,9 +412,10 @@ class data (object):
 
         temp = {'projection' : column_projection, 'table_name' : table_name, 'condition': cond }
         return (temp)
+    ################
 
-
-
+    # ini parsing untuk query where
+    # ini misahin string terus kembaliin bagian penting
     def parseJoinQuery(self, query):
 
         # SELECT nim, nama FROM Mahasiswa JOIN Registrasi using (nim);
@@ -438,10 +472,13 @@ class data (object):
 
         return [column_projection, table_name, joined_on]
 
+
+    # ini cek apa kolom di query
+    # sama untuk no 3 searching
     def isColumnValid(self, column : list, table_name : str):
 
         table_col = self.getTable(self.tb, table_name)
-        #print(self.getTable(self.tb, table_name))
+
 
         inTabel = True
 
@@ -451,6 +488,9 @@ class data (object):
 
         return inTabel
 
+
+    ################## FIlE I/O
+    ######### Write to file shared_pool.txt
     def write_share_pool(self, query : str, imp_data : list):
         import os
         with open(self.folder_name + "shared_pool.txt", 'a') as file :
@@ -460,7 +500,7 @@ class data (object):
             for line in imp_data :
                 file.write(str(line)+'\n')
 
-
+    ######### ini read file shared_pool.txt
     def print_shared_pool(self):
         # baca file shared pool
         text = open(self.folder_name + "shared_pool.txt", 'r')
